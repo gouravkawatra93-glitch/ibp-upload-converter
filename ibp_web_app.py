@@ -42,25 +42,33 @@ st.write(date_cols)
 
 # --- Function to convert any header to YYYY-MM-DD ---
 def parse_to_ibp_date(header):
-    header = str(header)
+    header_str = str(header).strip()
 
-    # 1. Try direct date parsing
-    dt = pd.to_datetime(header, errors='coerce')
-    if not pd.isna(dt):
-        return dt.strftime('%Y-%m-%d')
+    # 1️⃣ Try normal date (Excel / ISO / text date)
+    try:
+        dt = pd.to_datetime(header_str, errors="raise")
+        return dt.strftime("%Y-%m-%d")
+    except:
+        pass
 
-    # 2. Extract year if present (e.g. 2026)
-    year_match = re.search(r'(20\d{2})', header)
-    year = int(year_match.group(1)) if year_match else datetime.now().year
+    # 2️⃣ ISO week formats: WK02 2025, wk2_2026, Week-12-2024
+    wk_match = re.search(
+        r"(wk|week)?\s*[-_ ]?\s*(\d{1,2})\s*[-_ ]?\s*(20\d{2})",
+        header_str,
+        re.IGNORECASE
+    )
 
-    # 3. Parse week formats: wk12, week-12, wk12_2026
-    week_match = re.search(r'(wk|week)[-_ ]?(\d{1,2})', header, re.IGNORECASE)
-    if week_match:
-        week = int(week_match.group(2))
-        dt = datetime.strptime(f'{year}-W{week}-1', "%Y-W%W-%w")
-        return dt.strftime('%Y-%m-%d')
+    if wk_match:
+        week = int(wk_match.group(2))
+        year = int(wk_match.group(3))
 
-    return header
+        # ISO week → Monday
+        dt = pd.to_datetime(f"{year}-W{week}-1", format="%G-W%V-%u")
+        return dt.strftime("%Y-%m-%d")
+
+    # 3️⃣ Fallback: return original (non-period column)
+    return header_str
+
 
 
 # --- Convert date headers to YYYY-MM-DD ---
