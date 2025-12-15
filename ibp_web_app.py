@@ -76,22 +76,27 @@ keyfigure_name = st.text_input("KEYFIGURE", value="FCST")
 # --- Generate IBP CSV ---
 if st.button("Generate IBP CSV"):
     try:
-        df_melt = df.melt(id_vars=all_dims,
-                          value_vars=date_cols,
-                          var_name="PERIODID",
-                          value_name="VALUE")
-        df_melt.insert(0, "KEYFIGURE", keyfigure_name)
+        df_melt = df.melt(
+            id_vars=all_dims,
+            value_vars=date_cols,
+            var_name="PERIODID",
+            value_name=keyfigure_name   # 👈 KEY CHANGE
+        )
 
-        final_cols = ["KEYFIGURE"] + all_dims + ["PERIODID", "VALUE"]
+        final_cols = all_dims + ["PERIODID", keyfigure_name]
         df_final = df_melt[final_cols]
 
         st.success("IBP-ready file generated — preview below")
         st.dataframe(df_final.head(200))
 
-        # Download
         towrite = io.StringIO()
         df_final.to_csv(towrite, index=False)
-        st.download_button("Download IBP CSV", data=towrite.getvalue(),
-                           file_name="ibp_output.csv", mime="text/csv")
+        st.download_button(
+            "Download IBP CSV",
+            data=towrite.getvalue(),
+            file_name="ibp_output.csv",
+            mime="text/csv"
+        )
     except Exception as e:
         st.error(f"Failed to generate IBP CSV: {e}")
+
