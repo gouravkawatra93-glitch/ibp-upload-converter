@@ -42,28 +42,26 @@ st.write(date_cols)
 
 # --- Function to convert any header to YYYY-MM-DD ---
 def parse_to_ibp_date(header):
-    # 1. Try normal date parsing
-    try:
-        dt = pd.to_datetime(header, errors='coerce')
-        if not pd.isna(dt):
-            return dt.strftime('%Y-%m-%d')
-    except:
-        pass
+    header = str(header)
 
-    # 2. Try to parse week formats: week1, wk1, week-1
-    week_match = re.search(r'week[-_]?(\d{1,2})|wk[-_]?(\d{1,2})', header, re.IGNORECASE)
+    # 1. Try direct date parsing
+    dt = pd.to_datetime(header, errors='coerce')
+    if not pd.isna(dt):
+        return dt.strftime('%Y-%m-%d')
+
+    # 2. Extract year if present (e.g. 2026)
+    year_match = re.search(r'(20\d{2})', header)
+    year = int(year_match.group(1)) if year_match else datetime.now().year
+
+    # 3. Parse week formats: wk12, week-12, wk12_2026
+    week_match = re.search(r'(wk|week)[-_ ]?(\d{1,2})', header, re.IGNORECASE)
     if week_match:
-        week_num = week_match.group(1) or week_match.group(2)
-        try:
-            week_num = int(week_num)
-            year = datetime.now().year
-            dt = datetime.strptime(f'{year}-W{week_num}-1', "%Y-W%W-%w")  # Monday of that week
-            return dt.strftime('%Y-%m-%d')
-        except:
-            pass
+        week = int(week_match.group(2))
+        dt = datetime.strptime(f'{year}-W{week}-1', "%Y-W%W-%w")
+        return dt.strftime('%Y-%m-%d')
 
-    # fallback: return original header
     return header
+
 
 # --- Convert date headers to YYYY-MM-DD ---
 new_date_cols = [parse_to_ibp_date(col) for col in date_cols]
