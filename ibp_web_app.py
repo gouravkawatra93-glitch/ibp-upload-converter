@@ -95,7 +95,7 @@ if st.button("Generate IBP CSV"):
         df_final = df_melt[final_cols]
 
         st.success("IBP-ready file generated — preview below")
-        st.dataframe(df_final.head(200))
+        st.dataframe(df_final.head(90000))
 
         towrite = io.StringIO()
         df_final.to_csv(towrite, index=False)
@@ -107,4 +107,5 @@ if st.button("Generate IBP CSV"):
         )
     except Exception as e:
         st.error(f"Failed to generate IBP CSV: {e}")
+
 
